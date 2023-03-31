@@ -1,6 +1,35 @@
-<div class='mt-4'>
+<form  class='mt-4' name="container-form" method="POST" action='/courses/handle-form-actions'>
 	<h3>Khóa học của đã xóa</h3>
 	<a href='/me/stored/courses'>Quay lại danh sách khóa học</a>
+
+	<div class='mt-4 d-flex align-items-center'>
+		<div class='form-check'>
+			<input
+				class='form-check-input'
+				type='checkbox'
+				value=''
+				id='checkbox-all'
+			/>
+			<label id="checkbox-all-label" class='form-check-label ' for='checkbox-all'>
+				Chọn tất cả
+			</label>
+		</div>
+
+		<select
+			class='form-select form-select-sm select-all-option'
+			aria-label='Default select example'
+			name="action"
+			required
+		>
+			<option value=''>--Chọn hành động--</option>
+			<option value='restore'>Khôi phục</option>
+			<option value='delete-force'>Xóa vĩnh viễn</option>
+
+		</select>
+
+		<button  class='btn btn-primary btn-sm is-checked-show-btn disabled'>Thực hiện</button>
+	</div>
+
 
 	<table class='table'>
 		<thead>
@@ -8,17 +37,29 @@
 				<th scope='col'>#</th>
 				<th scope='col'>Tên khóa học</th>
 				<th scope='col'>Trình độ</th>
-				<th scope='col ' colspan='2'>Thời gian tạo</th>
+				<th scope='col ' colspan='2'>Thời gian xóa</th>
 			</tr>
 		</thead>
 		<tbody>
 
 			{{#each courses}}
 				<tr>
+					<td>
+						<div class='form-check'>
+							<input
+								class='form-check-input'
+								type='checkbox'
+								value='{{this._id}}'
+								name='courseIds'
+							/>
+
+						</div>
+					</td>
+
 					<th scope='row'>{{sum @index 1}}</th>
 					<td>{{this.name}}</td>
 					<td>{{this.level}}</td>
-					<td>{{this.createdAt}}</td>
+					<td>{{this.deletedAt}}</td>
 					<td><a
 							href=''
 							class='btn btn-link'
@@ -44,7 +85,7 @@
 
 		</tbody>
 	</table>
-</div>
+</form>
 
 {{! Confirm Delete course}}
 
@@ -87,17 +128,92 @@
 <form name='delete-course-form' method='POST'></form>
 
 <script>
-	var restoreForm=document.forms['restore-course-form']; var restoreBtnAll =
-	document.querySelectorAll('#btn-restore-course');
-	restoreBtnAll.forEach((restoreBtn) => { restoreBtn.addEventListener('click',
-	(e) => { e.preventDefault(); var courseId =
-	restoreBtn.getAttribute('data-id'); restoreForm.action = '/courses/' +
-	courseId + '/restore?_method=PATCH'; restoreForm.submit(); }); }); var
-	DelCourse = document.getElementById('delete-course-modal'); var id; var
-	btnDelCourse=document.getElementById('btn-delete-course'); var
-	deleteForm=document.forms['delete-course-form'];
-	DelCourse.addEventListener('show.bs.modal', event => { var button =
-	event.relatedTarget; id = button.getAttribute('data-id'); })
-	btnDelCourse.onclick=function(){ deleteForm.action='/courses/'+id+
-	'/force?_method=DELETE'; deleteForm.submit(); }
+	var restoreForm = document.forms['restore-course-form']; 
+	var deleteForm=document.forms['delete-course-form'];
+	var submitForm=document.forms['container-form'];
+
+	var btnDelCourse=document.getElementById('btn-delete-course'); 
+	var DelCourse = document.getElementById('delete-course-modal');
+	var restoreBtnAll = document.querySelectorAll('#btn-restore-course');
+	var isCheckedShowBtn = document.querySelector('.is-checked-show-btn');
+
+	var id; 
+
+
+	var checkboxAll = document.getElementById('checkbox-all');
+	var courseItemCheckbox = document.querySelectorAll('[name="courseIds"]');
+	var selectAllOption = document.querySelector('.select-all-option');
+
+
+	restoreBtnAll.forEach((restoreBtn) => {
+		restoreBtn.addEventListener('click',(e) => { 
+		e.preventDefault(); 
+		var courseId =	restoreBtn.getAttribute('data-id'); 
+		
+		restoreForm.action = '/courses/' + courseId + '/restore?_method=PATCH'; 
+		restoreForm.submit();
+		}); 
+	}); 
+
+	
+	
+	DelCourse.addEventListener('show.bs.modal', event => { 
+		var button = event.relatedTarget; 
+		id = button.getAttribute('data-id'); 
+	});
+
+	btnDelCourse.onclick=function(){ 
+		deleteForm.action='/courses/'+id+'/force?_method=DELETE'; 
+		deleteForm.submit(); 
+	}
+	
+	
+	checkboxAll.onchange = function() {
+		var isChecked = checkboxAll.checked;
+
+		courseItemCheckbox.forEach(function(checkbox) {
+			checkbox.checked = isChecked;
+			renderIsCheckedShowBtn ();
+
+		});
+	}
+
+
+
+	for (var i = 0; i < courseItemCheckbox.length; i++) {
+		courseItemCheckbox[i].onchange = function() {
+			var countChecked = document.querySelectorAll('[name="courseIds{}"]:checked').length;
+			checkboxAll.checked = countChecked === courseItemCheckbox.length;
+			renderIsCheckedShowBtn ();
+
+		};
+	}
+
+			
+		
+
+		isCheckedShowBtn.addEventListener('submit', function(e) {
+			var isSubmitEnabled = !isCheckedShowBtn.classList.contains('disabled');
+			if (!isSubmitEnabled) {
+				e.preventDefault();
+				}
+			});
+
+			submitForm.addEventListener('submit', function(event) {
+				if (selectAllOption.value === '') {
+					event.preventDefault();
+					}
+			});
+
+		function renderIsCheckedShowBtn (){
+			var checked =document.querySelectorAll('[name="courseIds"]:checked').length;
+
+			if(checked >0 ){
+				isCheckedShowBtn.classList.remove('disabled');
+			}else{
+				isCheckedShowBtn.classList.add('disabled');
+			}
+		}
+
+	
 </script>
